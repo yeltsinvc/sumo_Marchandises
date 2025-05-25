@@ -286,37 +286,75 @@ sumo-gui -c freight_multi.sumocfg
 ### 6.1 Ajout de `<stop>`
 
 ```xml
-<flow id="flux_camions_std" ...>
-    <stop lane="route_depot_client_0" duration="120" parking="true"/>
-</flow>
+<routes>
+    <vType id="camion_standard" accel="1.0" decel="4.5" length="12.0"
+           minGap="2.5" maxSpeed="22.22" vehicleClass="truck" color="0,0,1"/>
 
-<vehicle id="camion_special" ...>
-    <route edges="route_depot_client route_client_exit"/>
-    <stop lane="route_depot_client_0" duration="90" parking="true"
-          startPos="50" endPos="70"/>
-    <stop lane="route_client_exit_0" duration="30" parking="true"/>
-</vehicle>
+    <vType id="fourgonnette" accel="1.5" decel="5.0" length="7.0" minGap="2.0"
+           maxSpeed="25.0" vehicleClass="truck" guiShape="delivery" color="0,1,0"/>
+
+    <route id="route_depot_client1" edges="route_depot_client route_client_exit"/>
+
+    <flow id="flux_camions_std" type="camion_standard" route="route_depot_client1"
+          begin="0" end="300" period="60">
+        <stop lane="route_depot_client_0" duration="120" parking="true"/>
+    </flow>
+
+    <flow id="flux_fourgonnettes" type="fourgonnette" begin="10" end="300"
+          vehsPerHour="30" departLane="0" departSpeed="max">
+        <route edges="route_depot_client"/>
+        <stop lane="route_depot_client_0" duration="60" parking="true" endPos="-5"/>
+    </flow>
+
+    <vehicle id="camion_special" type="camion_standard" depart="50" color="1,0,0">
+        <route edges="route_depot_client route_client_exit"/>
+        <stop lane="route_depot_client_0" duration="90" parking="true" startPos="50" endPos="70"/>
+        <stop lane="route_client_exit_0" duration="30" parking="true"/>
+    </vehicle>
+</routes>
 ```
 
 ### 6.2 Zones de stationnement `freight.add.xml`
 
 ```xml
 <additional>
+    <!-- Zona de carga del cliente : 3 plazas en batería -->
     <parkingArea id="pa_client_loading_dock"
-                 lane="route_depot_client_0" startPos="100" endPos="150"
-                 capacity="3" roadSideCapacity="3">
-        <space length="15"/>
-    </parkingArea>
+                 lane="route_depot_client_0"
+                 startPos="100" endPos="150"
+                 roadsideCapacity="3"/>
 
+    <!-- Parking del depósito principal : 5 plazas en batería -->
     <parkingArea id="pa_depot_main"
-                 lane="route_depot_client_0" startPos="10" endPos="50"
-                 capacity="5" roadSideCapacity="5">
-        <access type="truck"/>
-    </parkingArea>
+                 lane="route_depot_client_0"
+                 startPos="10" endPos="50"
+                 roadsideCapacity="5"/>
 </additional>
+
 ```
 
 Ajoutez ce fichier via `<additional-files>` dans le `.sumocfg`.
+```xml
+<configuration>
+    <input>
+        <net-file   value="freight.net.xml"/>
+        <route-files value="freight_multi.rou.xml"/>
+        <additional-files value ="freight.add.xml"/> 
+    </input>
+    <time>
+        <begin value="0"/>
+        <end  value="600"/>
+    </time>
+        <processing>
+        <ignore-route-errors value="true"/>
+    </processing>
+
+    <gui_only>
+        <start             value="true"/>
+        <tracker-interval  value="0.1"/>
+    </gui_only>
+</configuration>
+```
 
 *Pourquoi modéliser arrêts & stationnement ?*
 
